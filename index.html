@@ -6,7 +6,7 @@
   <link rel="stylesheet" href="https://unpkg.com/frappe-gantt/dist/frappe-gantt.css">
   <style>
     body { font-family: Arial, sans-serif; }
-    #gantt { border: 1px solid #ccc; }
+    #gantt { border: 1px solid #ccc; height: 600px; } /* Hauteur fixée */
   </style>
 </head>
 <body>
@@ -45,9 +45,11 @@
       // Créer le Gantt avec les dates limitées
       new Gantt("#gantt", taches, {
         view_mode: "Month",
-        start_date: minDate.toISOString().split('T')[0],
-        end_date: maxDate.toISOString().split('T')[0],
-        date_format: "YYYY-MM-DD"
+        date_format: "YYYY-MM-DD",
+        view_start_date: minDate.toISOString().split('T')[0],
+        view_end_date: maxDate.toISOString().split('T')[0],
+        bar_height: 20,
+        padding: 18
       });
     } else {
       document.getElementById('gantt').innerHTML = "Aucune donnée disponible.";
@@ -55,5 +57,3 @@
   </script>
 </body>
 </html>
-
-
