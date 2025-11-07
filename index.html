@@ -5,38 +5,55 @@
   <title>Planning Gantt</title>
   <link rel="stylesheet" href="https://unpkg.com/frappe-gantt/dist/frappe-gantt.css">
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    #gantt { width: 100%; height: 600px; }
+    body { font-family: Arial, sans-serif; }
+    #gantt { border: 1px solid #ccc; }
   </style>
 </head>
 <body>
-
-  <h2>Planning Gantt</h2>
   <div id="gantt"></div>
 
   <script src="https://unpkg.com/frappe-gantt/dist/frappe-gantt.umd.js"></script>
   <script>
-    // Récupérer le paramètre "data" de l'URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const encodedData = urlParams.get('data');
+    // Récupération du paramètre "data" dans l'URL
+    function getURLParameter(name) {
+      const params = new URLSearchParams(window.location.search);
+      return params.get(name);
+    }
 
-    if(encodedData){
-      try {
-        const finalTaches = JSON.parse(atob(encodedData)); // base64 -> JSON
+    const encodedData = getURLParameter('data');
 
-        // Création du Gantt
-        new Gantt("#gantt", finalTaches, {
-          view_mode: "Month",
-          date_format: "YYYY/MM/DD"
-        });
-      } catch(e) {
-        console.error("Erreur décodage JSON :", e);
-        document.getElementById("gantt").innerText = "Erreur : JSON invalide";
-      }
+    if (encodedData) {
+      // Décoder le JSON
+      const taches = JSON.parse(atob(encodedData));
+
+      // Calculer la date min et max
+      let minDate = null;
+      let maxDate = null;
+
+      taches.forEach(t => {
+        const start = new Date(t.start);
+        const end = new Date(t.end);
+
+        if (!minDate || start < minDate) minDate = start;
+        if (!maxDate || end > maxDate) maxDate = end;
+      });
+
+      // Ajouter une marge de 2 mois avant et après
+      minDate.setMonth(minDate.getMonth() - 2);
+      maxDate.setMonth(maxDate.getMonth() + 2);
+
+      // Créer le Gantt avec les dates limitées
+      new Gantt("#gantt", taches, {
+        view_mode: "Month",
+        start_date: minDate.toISOString().split('T')[0],
+        end_date: maxDate.toISOString().split('T')[0],
+        date_format: "YYYY-MM-DD"
+      });
     } else {
-      document.getElementById("gantt").innerText = "Aucune donnée fournie dans l'URL";
+      document.getElementById('gantt').innerHTML = "Aucune donnée disponible.";
     }
   </script>
-
 </body>
 </html>
+
+
