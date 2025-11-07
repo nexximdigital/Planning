@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Planning Gantt - dhtmlxGantt</title>
+  <link rel="stylesheet" href="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.css">
+  <style>
+    html, body { height: 100%; padding:0; margin:0; font-family: Arial, sans-serif; }
+    #gantt { width: 100%; height: 600px; }
+  </style>
+</head>
+<body>
+  <div id="gantt"></div>
+
+  <script src="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.js"></script>
+  <script>
+    // Récupération du JSON Base64 depuis l'URL
+    function getURLParameter(name) {
+      const params = new URLSearchParams(window.location.search);
+      return params.get(name);
+    }
+
+    const encodedData = getURLParameter('data');
+    if (!encodedData) {
+      document.getElementById('gantt').innerHTML = "Aucune donnée disponible.";
+      throw new Error("Pas de data");
+    }
+
+    const tasksArray = JSON.parse(atob(encodedData));
+
+    // Transformation pour dhtmlxGantt
+    const tasks = {
+      data: tasksArray.map(t => ({
+        id: t.id,
+        text: t.name,
+        start_date: t.start,
+        end_date: t.end,
+        progress: t.progress || 0,
+        parent: 0
+      })),
+      links: tasksArray
+        .filter(t => t.dependencies)
+        .map(t => ({ id: t.id+"-link", source: t.dependencies, target: t.id, type: "0" }))
+    };
+
+    // Calcul des dates min/max + marge
+    let minDate = null;
+    let maxDate = null;
+    tasks.data.forEach(t => {
+      const s = new Date(t.start_date);
+      const e = new Date(t.end_date);
+      if (!minDate || s < minDate) minDate = s;
+      if (!maxDate || e > maxDate) maxDate = e;
+    });
+    minDate.setMonth(minDate.getMonth()-2);
+    maxDate.setMonth(maxDate.getMonth()+2);
+
+    gantt.config.start_date = minDate;
+    gantt.config.end_date = maxDate;
+    gantt.config.scale_unit = "month";
+    gantt.config.date_scale = "%M %Y";
+    gantt.config.duration_unit = "day";
+    gantt.config.drag_progress = true;
+    gantt.config.drag_links = true;
+    gantt.config.drag_move = true;
+
+    // Evénement drag & drop
+    gantt.attachEvent("onAfterTaskUpdate", function(id, item){
+      console.log(`Tâche ${item.text} déplacée : ${item.start_date} → ${item.end_date}`);
+
+      // Exemple: envoyer via Webhook
+      /*
+      fetch("https://api.glideapps.com/webhook/ton_webhook_id", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          task_id: item.id,
+          new_start: item.start_date.toISOString().split('T')[0],
+          new_end: item.end_date.toISOString().split('T')[0]
+        })
+      });
+      */
+    });
+
+    gantt.init("gantt");
+    gantt.parse(tasks);
+  </script>
+</body>
+</html>
