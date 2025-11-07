@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Planning Bâtiment</title>
+  <link rel="stylesheet" href="https://unpkg.com/frappe-gantt/dist/frappe-gantt.css">
+  <style>
+    body { font-family: sans-serif; margin: 10px; }
+    #gantt { overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h3>Planning Bâtiment</h3>
+  <div id="gantt"></div>
+
+  <script src="https://unpkg.com/frappe-gantt/dist/frappe-gantt.umd.js"></script>
+  <script>
+    // Voici la liste de tes tâches
+    const taches = [
+      {id:"1", name:"Terrassement", start:"2025-03-01", end:"2025-03-15", progress:100, dependencies:""},
+      {id:"2", name:"Fondations", start:"2025-03-16", end:"2025-04-05", progress:80, dependencies:"1"},
+      {id:"3", name:"Gros œuvre", start:"2025-04-06", end:"2025-06-30", progress:40, dependencies:"2"}
+    ];
+
+    // Ici on demande à Frappe Gantt de créer le planning
+    new Gantt("#gantt", taches, { view_mode: "Month", date_format: "YYYY-MM-DD" });
+  </script>
+</body>
+</html>
