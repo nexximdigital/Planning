@@ -50,10 +50,31 @@
     }
 
     let taches = [];
+    let decodedData = '';
     try {
-      taches = JSON.parse(atob(encodedData));
+      // Décodage Base64
+      decodedData = atob(encodedData);
+      console.log("📄 Données décodées:", decodedData);
+      
+      // Parsing JSON
+      taches = JSON.parse(decodedData);
+      console.log("✅ Tâches chargées:", taches);
     } catch(e) {
-      document.getElementById('gantt').innerHTML = "<p style='padding:20px;color:red;'>❌ Erreur lors du décodage des données.</p>";
+      document.getElementById('gantt').innerHTML = `
+        <div style='padding:20px;font-family:monospace;'>
+          <h3 style='color:red;'>❌ Erreur lors du décodage des données</h3>
+          <p><strong>Message d'erreur:</strong> ${e.message}</p>
+          <p><strong>Données décodées:</strong></p>
+          <pre style='background:#f5f5f5;padding:10px;overflow:auto;max-height:300px;'>${decodedData || 'Impossible de décoder'}</pre>
+          <hr>
+          <p><strong>💡 Vérifiez dans Glide:</strong></p>
+          <ul>
+            <li>Toutes les virgules sont présentes entre les champs</li>
+            <li>Les guillemets sont bien fermés</li>
+            <li>Le JSON est valide (testez sur jsonlint.com)</li>
+          </ul>
+        </div>
+      `;
       throw e;
     }
 
