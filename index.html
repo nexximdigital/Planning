@@ -2,21 +2,33 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Planning Gantt</title>
   <link rel="stylesheet" href="https://unpkg.com/frappe-gantt/dist/frappe-gantt.css">
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
-    #gantt { width: 100%; height: 600px; }
+    body { 
+      font-family: Arial, sans-serif; 
+      margin: 0; 
+      padding: 10px; 
+      overflow-x: auto;
+    }
+    #gantt { 
+      width: 100%; 
+      min-height: 500px;
+    }
+    .gantt .upper-text, .gantt .lower-text {
+      font-family: Arial, sans-serif !important;
+    }
   </style>
 </head>
 <body>
   <div id="gantt"></div>
-
   <script src="https://unpkg.com/frappe-gantt/dist/frappe-gantt.umd.js"></script>
   <script>
-    // 📌 Noms des mois en français
-    const moisFR = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
-
+    // 📌 Configuration des mois en français
+    const moisFR = ["Janv.","Févr.","Mars","Avr.","Mai","Juin","Juil.","Août","Sept.","Oct.","Nov.","Déc."];
+    const moisComplets = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+    
     // 🔹 Récupération du JSON Base64 depuis l'URL
     function getURLParameter(name) {
       const params = new URLSearchParams(window.location.search);
@@ -25,22 +37,31 @@
 
     const encodedData = getURLParameter('data');
     if (!encodedData) {
-      document.getElementById('gantt').innerHTML = "Aucune donnée disponible.";
-      throw new Error("Pas de data");
+      document.getElementById('gantt').innerHTML = "<p style='padding:20px;color:#666;'>⚠️ Aucune donnée disponible. Vérifiez que le paramètre 'data' est présent dans l'URL.</p>";
+      throw new Error("Pas de données à afficher");
     }
 
-    const taches = JSON.parse(atob(encodedData));
+    let taches = [];
+    try {
+      taches = JSON.parse(atob(encodedData));
+    } catch(e) {
+      document.getElementById('gantt').innerHTML = "<p style='padding:20px;color:red;'>❌ Erreur lors du décodage des données.</p>";
+      throw e;
+    }
 
-    // 🔹 Calcul des dates min/max + marge de 2 mois
+    // 🔹 Calcul des dates min/max avec marge de 1-2 mois
     let minDate = null;
     let maxDate = null;
+    
     taches.forEach(t => {
       const s = new Date(t.start);
       const e = new Date(t.end);
-      if (!minDate || s < minDate) minDate = s;
-      if (!maxDate || e > maxDate) maxDate = e;
+      if (!minDate || s < minDate) minDate = new Date(s);
+      if (!maxDate || e > maxDate) maxDate = new Date(e);
     });
-    minDate.setMonth(minDate.getMonth() - 2);
+
+    // Ajout d'une marge : 1 mois avant, 2 mois après
+    minDate.setMonth(minDate.getMonth() - 1);
     maxDate.setMonth(maxDate.getMonth() + 2);
 
     // 🔹 Création du Gantt
@@ -48,24 +69,65 @@
       view_mode: "Month",
       date_format: "YYYY-MM-DD",
       custom_popup_html: null,
-      on_view_change: function(mode) {
-        if(mode === "Month") {
-          document.querySelectorAll(".gantt .month").forEach(function(el){
-            const date = new Date(el.dataset.date);
-            el.innerText = moisFR[date.getMonth()] + " " + date.getFullYear();
-          });
-        }
-      },
+      language: 'fr',
       on_date_change: function(task, start, end) {
         console.log(`Tâche ${task.name} déplacée : ${start} → ${end}`);
-        // Ici tu pourras envoyer les nouvelles dates vers Glide via Webhook si besoin
       }
     });
 
-    // 🔹 Limiter la vue
-    gantt.change_view_mode("Month");
-    gantt.change_start_date(minDate.toISOString().split('T')[0]);
-    gantt.change_end_date(maxDate.toISOString().split('T')[0]);
+    // 🔹 Fonction pour traduire les en-têtes en français
+    function traduireEnTetes() {
+      setTimeout(() => {
+        // Traduction des mois dans les en-têtes
+        document.querySelectorAll('.gantt .upper-text').forEach(el => {
+          const texte = el.textContent.trim();
+          
+          // Pour les mois (format: "January 2024" ou "Jan 2024")
+          const moisAnglais = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+          moisAnglais.forEach((mois, index) => {
+            if (texte.includes(mois)) {
+              el.textContent = texte.replace(mois, moisComplets[index]);
+            }
+          });
+          
+          // Pour les abréviations
+          const moisAnglaisAbrv = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+          moisAnglaisAbrv.forEach((mois, index) => {
+            if (texte === mois || texte.startsWith(mois + " ")) {
+              el.textContent = texte.replace(mois, moisFR[index]);
+            }
+          });
+        });
+
+        // Traduction des années et autres textes si nécessaire
+        document.querySelectorAll('.gantt .lower-text').forEach(el => {
+          // Les années restent telles quelles, rien à faire
+        });
+      }, 100);
+    }
+
+    // 🔹 Application initiale de la traduction
+    traduireEnTetes();
+
+    // 🔹 Réappliquer la traduction lors des changements de vue
+    const observateur = new MutationObserver(() => {
+      traduireEnTetes();
+    });
+
+    const ganttElement = document.querySelector('#gantt');
+    if (ganttElement) {
+      observateur.observe(ganttElement, {
+        childList: true,
+        subtree: true
+      });
+    }
+
+    // 🔹 Forcer la vue Month au chargement
+    setTimeout(() => {
+      gantt.change_view_mode('Month');
+      traduireEnTetes();
+    }, 200);
+
   </script>
 </body>
 </html>
