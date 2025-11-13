@@ -85,17 +85,23 @@
     taches.forEach(t => {
       const s = new Date(t.start);
       const e = new Date(t.end);
-      if (!minDate || s < minDate) minDate = new Date(s);
-      if (!maxDate || e > maxDate) maxDate = new Date(e);
+      if (!minDate || s < minDate) minDate = s;
+      if (!maxDate || e > maxDate) maxDate = e;
     });
 
-    // Sauvegarde des dates originales
-    const dateDebut = new Date(minDate);
-    const dateFin = new Date(maxDate);
+    console.log("📅 Date minimale des tâches:", minDate);
+    console.log("📅 Date maximale des tâches:", maxDate);
+    
+    // Création de nouvelles dates pour les marges (sans modifier les originales)
+    const dateDebut = new Date(minDate.getTime());
+    const dateFin = new Date(maxDate.getTime());
     
     // Ajout d'une marge : 1 mois avant, 2 mois après
     dateDebut.setMonth(dateDebut.getMonth() - 1);
     dateFin.setMonth(dateFin.getMonth() + 2);
+    
+    console.log("📅 Date d'affichage début (avec marge):", dateDebut);
+    console.log("📅 Date d'affichage fin (avec marge):", dateFin);
 
     // 🔹 Ajout des couleurs personnalisées aux tâches
     taches.forEach(t => {
