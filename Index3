@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Planning Chantier</title>
+  <link rel="stylesheet" href="https://unpkg.com/frappe-gantt/dist/frappe-gantt.css">
+  <style>
+    body { font-family: "Inter", sans-serif; background: #f7f9fb; padding: 20px; }
+    #gantt { border: 1px solid #ddd; border-radius: 10px; padding: 10px; background: white; }
+  </style>
+</head>
+<body>
+
+<h2>Planning du Projet</h2>
+<div id="gantt"></div>
+
+<script src="https://unpkg.com/frappe-gantt/dist/frappe-gantt.umd.js"></script>
+<script>
+// === Données du planning ===
+const taches = [
+  { id: "1", name: "Terrassement", start: "2025-03-01", end: "2025-03-15", progress: 100 },
+  { id: "2", name: "Fondations", start: "2025-03-16", end: "2025-04-05", progress: 80, dependencies: "1" },
+  { id: "3", name: "Gros œuvre", start: "2025-04-06", end: "2025-06-30", progress: 40, dependencies: "2" }
+];
+
+// === Création du Gantt ===
+const gantt = new Gantt("#gantt", taches, {
+  view_mode: "Month",
+  date_format: "YYYY-MM-DD",
+  custom_popup_html: task => `
+    <b>${task.name}</b><br>
+    ${new Date(task.start).toLocaleDateString('fr-FR')} → ${new Date(task.end).toLocaleDateString('fr-FR')}<br>
+    Progression : ${task.progress}%
+  `,
+});
+
+// === Localisation en français ===
+const moisFR = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
+const joursFR = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
+
+// Remplace les labels dans l’en-tête
+document.querySelectorAll(".lower-text, .upper-text").forEach(el => {
+  moisFR.forEach((m, i) => el.textContent = el.textContent.replace(new RegExp(`\\b${new Date(2000, i).toLocaleString('en', { month: 'short' })}\\b`, "g"), m));
+  joursFR.forEach((j, i) => el.textContent = el.textContent.replace(new RegExp(`\\b${new Date(2000, 0, i + 2).toLocaleString('en', { weekday: 'short' })}\\b`, "g"), j));
+});
+</script>
+
+</body>
+</html>
