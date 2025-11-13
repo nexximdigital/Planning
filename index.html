@@ -19,6 +19,14 @@
     .gantt .upper-text, .gantt .lower-text {
       font-family: Arial, sans-serif !important;
     }
+    
+    /* 🎨 Styles pour les couleurs personnalisées */
+    .bar-wrapper .bar {
+      transition: all 0.3s ease;
+    }
+  </style>
+  <style id="custom-colors">
+    /* Les couleurs personnalisées seront injectées ici dynamiquement */
   </style>
 </head>
 <body>
@@ -60,9 +68,24 @@
       if (!maxDate || e > maxDate) maxDate = new Date(e);
     });
 
+    // Sauvegarde des dates originales
+    const dateDebut = new Date(minDate);
+    const dateFin = new Date(maxDate);
+    
     // Ajout d'une marge : 1 mois avant, 2 mois après
-    minDate.setMonth(minDate.getMonth() - 1);
-    maxDate.setMonth(maxDate.getMonth() + 2);
+    dateDebut.setMonth(dateDebut.getMonth() - 1);
+    dateFin.setMonth(dateFin.getMonth() + 2);
+
+    // 🔹 Ajout des couleurs personnalisées aux tâches
+    taches.forEach(t => {
+      // Si une couleur est définie dans les données, on l'utilise
+      if (t.custom_class) {
+        t.custom_class = t.custom_class;
+      } else if (t.color) {
+        // Sinon on crée une classe custom
+        t.custom_class = 'custom-color-' + t.id;
+      }
+    });
 
     // 🔹 Création du Gantt
     const gantt = new Gantt("#gantt", taches, {
@@ -70,6 +93,9 @@
       date_format: "YYYY-MM-DD",
       custom_popup_html: null,
       language: 'fr',
+      view_modes: ['Day', 'Week', 'Month'],
+      bar_height: 30,
+      padding: 18,
       on_date_change: function(task, start, end) {
         console.log(`Tâche ${task.name} déplacée : ${start} → ${end}`);
       }
@@ -108,6 +134,32 @@
 
     // 🔹 Application initiale de la traduction
     traduireEnTetes();
+    
+    // 🎨 Application des couleurs personnalisées
+    function appliquerCouleurs() {
+      const styleSheet = document.getElementById('custom-colors');
+      let cssRules = '';
+      
+      taches.forEach(t => {
+        if (t.color) {
+          cssRules += `
+            .bar-wrapper[data-id="${t.id}"] .bar {
+              fill: ${t.color} !important;
+            }
+            .bar-wrapper[data-id="${t.id}"] .bar-progress {
+              fill: ${t.color} !important;
+              opacity: 0.8;
+            }
+          `;
+        }
+      });
+      
+      styleSheet.textContent = cssRules;
+    }
+    
+    setTimeout(() => {
+      appliquerCouleurs();
+    }, 300);
 
     // 🔹 Réappliquer la traduction lors des changements de vue
     const observateur = new MutationObserver(() => {
@@ -126,7 +178,25 @@
     setTimeout(() => {
       gantt.change_view_mode('Month');
       traduireEnTetes();
-    }, 200);
+      appliquerCouleurs();
+      
+      // 🔹 Limiter l'affichage aux dates pertinentes
+      const ganttContainer = document.querySelector('.gantt-container');
+      if (ganttContainer) {
+        // Calculer la position de scroll pour centrer sur les dates actives
+        const barWrappers = document.querySelectorAll('.bar-wrapper');
+        if (barWrappers.length > 0) {
+          const firstBar = barWrappers[0];
+          const rect = firstBar.getBoundingClientRect();
+          const container = ganttContainer.closest('.gantt');
+          
+          // Scroll pour afficher la première tâche avec marge
+          if (container) {
+            container.scrollLeft = Math.max(0, rect.left - 200);
+          }
+        }
+      }
+    }, 300);
 
   </script>
 </body>
